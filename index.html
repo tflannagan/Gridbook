@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gridbook | Ty</title>
+    <link rel="icon" type="image/png" href="favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #007AFF;
+            --primary-light: rgba(0, 122, 255, 0.1);
+            --primary-dark: #0056b3;
+            --secondary-color: #5856D6;
+            --background-color: #F2F2F7;
+            --text-color: #1C1C1E;
+            --grid-color: rgba(0, 0, 0, 0.1);
+            --grid-hover: rgba(0, 122, 255, 0.15);
+            --page-color: #FFFFFF;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --toolbar-bg: rgba(255, 255, 255, 0.9);
+            --sidebar-width: 60px;
+            --grid-size: 24px;
+            --line-thickness: 2px;
+    --grid-size: 24px;
+    --point-size: 6px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background-color: #1C1C1E;
+                --text-color: #FFFFFF;
+                --page-color: #2C2C2E;
+                --grid-color: rgba(255, 255, 255, 0.1);
+                --grid-hover: rgba(0, 122, 255, 0.25);
+                --shadow-color: rgba(0, 0, 0, 0.3);
+                --toolbar-bg: rgba(30, 30, 30, 0.9);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+           
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--background-color);
+            min-height: 100vh;
+            display: flex;
+            color: var(--text-color);
+        }
+
+        .cover {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: left;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+
+        .cover.opened {
+            transform: rotateY(-180deg);
+            pointer-events: none;
+        }
+
+        .cover-content {
+            text-align: center;
+            padding: 3rem;
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            transform: scale(1.5);
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out 0.2s forwards;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .cover-content h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #fff, #e0e0e0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .open-button {
+            padding: 1rem 2.5rem;
+            font-size: 1.2rem;
+            background: white;
+            color: var(--primary-color);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .open-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: var(--sidebar-width);
+            background-color: var(--toolbar-bg);
+            
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            gap: 20px;
+            z-index: 100;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .pages-dropdown {
+            position: fixed;
+            left: var(--sidebar-width);
+            top: 0;
+            bottom: 0;
+            width: 200px;
+            background-color: var(--toolbar-bg);
+            
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            padding: 20px;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: 99;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .pages-dropdown.active {
+            transform: translateX(0);
+        }
+
+        .pages-list {
+            margin-top: 20px;
+        }
+
+        .page-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .page-item:hover {
+            background-color: var(--primary-light);
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .notebook {
+            width: 100%;
+            max-width: 1056px;
+            height: 816px;
+            background-color: var(--page-color);
+            box-shadow: 0 8px 32px var(--shadow-color);
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .notebook:hover {
+            box-shadow: 0 0 12px rgba(0, 122, 255, 0.4);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .grid-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-size: var(--grid-size) var(--grid-size);
+            background-image:
+                linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+        }
+
+        .grid-cell {
+            position: absolute;
+            width: var(--grid-size);
+            height: var(--grid-size);
+            transition: background-color 0.2s ease;
+        }
+
+        .grid-cell.filled {
+            background-color: var(--primary-color);
+            box-shadow: 0 0 12px rgba(0, 122, 255, 0.4);
+        }
+
+        .grid-line {
+            position: absolute;
+            background-color: var(--primary-color);
+            pointer-events: none;
+        }
+
+
+        .line-point {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            box-shadow: 0 0 4px rgba(0, 122, 255, 0.4);
+        }
+
+        .line-point.connected {
+            transform: scale(0);
+        }
+
+        .line-container {
+            position: absolute;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .line {
+            position: absolute;
+            background-color: var(--primary-color);
+            pointer-events: none;
+            box-shadow: 0 0 8px rgba(0, 122, 255, 0.3);
+            z-index: 1;
+            transform-origin: center;
+        }
+
+        .line.horizontal {
+            height: var(--line-thickness);
+            transform-origin: left center;
+        }
+
+        .line.vertical {
+            width: var(--line-thickness);
+            transform-origin: top center;
+        }
+
+
+        .line.diagonal {
+                height: var(--line-thickness);
+                width: calc(var(--grid-size) * 1.414);
+                transform-origin: 0 50%;
+            }
+
+        .preview-line {
+            opacity: 0.5;
+        }
+
+        .toolbar {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--toolbar-bg);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 10px;
+            display: flex;
+            gap: 8px;
+            z-index: 100;
+            box-shadow: 0 4px 24px var(--shadow-color);
+        }
+
+        .tool-button {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 12px;
+            background-color: transparent;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .tool-button:hover {
+            background-color: var(--primary-light);
+        }
+
+        .tool-button.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .sidebar-button {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 10px;
+            background-color: transparent;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .sidebar-button:hover {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .delete-page-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-color);
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        opacity: 0.6;
+        transition: opacity 0.2s;
+    }
+    .delete-page-btn:hover {
+        opacity: 1;
+        background-color: rgba(255, 0, 0, 0.1);
+    }
+
+        .color-picker-wrapper {
+        position: relative;
+        width: 50px;
+        height: 50px;
+        padding: 4px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+    }
+
+    .color-picker-wrapper:hover {
+        background-color: var(--primary-light);
+    }
+
+    .color-picker-button {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 2px solid var(--page-color);
+        box-shadow: 0 2px 8px var(--shadow-color);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+    .color-picker-wrapper:hover .color-picker-button {
+        transform: scale(1.1);
+    }
+
+    .color-picker-input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+        opacity: 0;
+    }
+
+    .color-indicator {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 6px;
+        animation: colorPickerPulse 2s ease-in-out infinite;
+        pointer-events: none;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1001;
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+        position: relative;
+        background-color: var(--page-color);
+        margin: 15% auto;
+        padding: 0;
+        width: 90%;
+        max-width: 500px;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px var(--shadow-color);
+        transform: translateY(20px);
+        opacity: 0;
+        transition: all 0.3s ease-out;
+    }
+
+    .modal.active {
+        display: block;
+    }
+
+    .modal.active .modal-content {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--grid-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        color: var(--text-color);
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .modal-close {
+        background: transparent;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-color);
+        opacity: 0.6;
+        transition: opacity 0.2s;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-close:hover {
+        opacity: 1;
+        background-color: var(--primary-light);
+    }
+
+    .modal-body {
+        padding: 20px;
+        color: var(--text-color);
+    }
+
+    .modal-footer {
+        padding: 20px;
+        border-top: 1px solid var(--grid-color);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .modal-input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--grid-color);
+        border-radius: 8px;
+        font-size: 1rem;
+        background-color: var(--page-color);
+        color: var(--text-color);
+        transition: border-color 0.2s;
+    }
+
+    .modal-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    .modal-button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .modal-button.primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .modal-button.primary:hover {
+        background-color: var(--primary-dark);
+    }
+
+    .modal-button.secondary {
+        background-color: transparent;
+        color: var(--text-color);
+    }
+
+    .modal-button.secondary:hover {
+        background-color: var(--primary-light);
+    }
+
+        @keyframes colorPickerPulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.2; }
+            100% { transform: scale(1); opacity: 0.5; }
+        }
+
+        @keyframes fadeIn {
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 1100px) {
+            .notebook {
+                max-width: 90vw;
+                height: calc(90vw * 8.5/11);
+                margin: 1rem auto;
+            }
+
+            .toolbar {
+                bottom: 20px;
+                padding: 8px;
+            }
+
+            .tool-button {
+                padding: 8px 16px;
+                font-size: 0.8rem;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="cover">
+        <div class="cover-content">
+            <h1>Gridbook</h1>
+            <button class="open-button">Open</button>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <button title="sidebar" class="sidebar-button" id="pagesToggle">
+            <i class="fas fa-book"></i>
+        </button>
+        <button title="sidebar" class="sidebar-button" id="newPage">
+            <i class="fas fa-plus"></i>
+        </button>
+        <button title="sidebar" class="sidebar-button" id="savePage">
+            <i class="fas fa-save"></i>
+        </button>
+    </div>
+
+    <div class="pages-dropdown">
+        <h3>Pages</h3>
+        <div class="pages-list" id="pagesList"></div>
+    </div>
+
+    <div class="main-content">
+        <div class="notebook">
+            <div class="grid-container" id="gridContainer"></div>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <button title="toolbar" class="tool-button active" data-tool="fill">
+            <i class="fas fa-fill-drip"></i>
+        </button>
+        <button title="toolbar" class="tool-button" data-tool="line">
+            <i class="fas fa-minus"></i>
+        </button>
+        <button title="toolbar" class="tool-button" data-tool="erase">
+            <i class="fas fa-eraser"></i>
+        </button>
+    </div>
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2></h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body"></div>
+            <div class="modal-footer"></div>
+        </div>
+    </div>
+
+    <script>
+class NotebookApp {
+    constructor() {
+        this.currentTool = 'fill';
+        this.isDrawing = false;
+        this.startPoint = null;
+        this.previewLine = null;
+        this.gridSize = 24;
+        this.isDiagonal = false;
+        this.pages = {
+            'Home': {
+                filledCells: new Map(), 
+                lines: []
+            }
+        };
+        this.currentPageName = 'Home';
+        this.currentColor = '#007AFF';
+        this.currentPageData = this.pages['Home'];
+        this.undoStack = [];
+        this.redoStack = [];
+        this.maxStackSize = 100;
+        this.modal = new Modal();
+
+        this.initializeGrid();
+        this.setupEventListeners();
+        this.loadFromLocalStorage();
+    }
+
+    initializeGrid() {
+        const container = document.getElementById('gridContainer');
+        const width = container.offsetWidth;
+        const height = container.offsetHeight;
+        const cols = Math.floor(width / this.gridSize);
+        const rows = Math.floor(height / this.gridSize);
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                cell.style.left = `${c * this.gridSize}px`;
+                cell.style.top = `${r * this.gridSize}px`;
+                cell.dataset.index = `${r}-${c}`;
+                container.appendChild(cell);
+            }
+        }
+    }
+
+    setupEventListeners() {
+        document.querySelector('.open-button').addEventListener('click', () => {
+            document.querySelector('.cover').classList.add('opened');
+        });
+
+        const container = document.getElementById('gridContainer');
+        container.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        container.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        container.addEventListener('mouseup', () => this.handleMouseUp());
+        container.addEventListener('mouseleave', () => this.handleMouseLeave());
+
+        const toolbar = document.querySelector('.toolbar');
+        const colorWrapper = document.createElement('div');
+        colorWrapper.className = 'tool-button color-picker-wrapper';
+
+        const colorButtonPreview = document.createElement('div');
+        colorButtonPreview.className = 'color-picker-button';
+        colorButtonPreview.style.backgroundColor = this.currentColor;
+
+        const eyedropperIcon = document.createElement('i');
+        eyedropperIcon.className = 'fas fa-eyedropper';
+        eyedropperIcon.style.position = 'absolute';
+        eyedropperIcon.style.right = '0';
+        eyedropperIcon.style.bottom = '0';
+        eyedropperIcon.style.fontSize = '12px';
+        eyedropperIcon.style.padding = '4px';
+        eyedropperIcon.style.color = 'var(--text-color)';
+        eyedropperIcon.style.opacity = '0.7';
+        colorButtonPreview.appendChild(eyedropperIcon);
+
+        const colorPicker = document.createElement('input');
+        colorPicker.type = 'color';
+        colorPicker.className = 'color-picker-input';
+        colorPicker.value = this.currentColor;
+        colorPicker.style.cursor = 'pointer';
+
+        colorButtonPreview.appendChild(colorPicker);
+        colorWrapper.appendChild(colorButtonPreview);
+        toolbar.insertBefore(colorWrapper, toolbar.firstChild);
+
+        colorPicker.addEventListener('input', (e) => {
+            const newColor = e.target.value;
+            this.currentColor = newColor;
+            colorButtonPreview.style.backgroundColor = newColor;
+        });
+
+        colorPicker.addEventListener('change', (e) => {
+            const newColor = e.target.value;
+            this.currentColor = newColor;
+            colorButtonPreview.style.backgroundColor = newColor;
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Shift') {
+                this.isDiagonal = true;
+            }
+
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                this.undo();
+            }
+            
+            if ((e.metaKey || e.ctrlKey) && ((e.shiftKey && e.key.toLowerCase() === 'z') || e.key.toLowerCase() === 'y')) {
+                e.preventDefault();
+                this.redo();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'Shift') this.isDiagonal = false;
+        });
+
+        document.querySelectorAll('.tool-button[data-tool]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const toolButton = e.target.closest('.tool-button');
+                if (!toolButton) return;
+
+                document.querySelectorAll('.tool-button[data-tool]').forEach(b => 
+                    b.classList.remove('active'));
+                toolButton.classList.add('active');
+                this.currentTool = toolButton.dataset.tool;
+                this.removePreviewLine();
+            });
+        });
+
+        document.getElementById('pagesToggle').addEventListener('click', () => {
+            document.querySelector('.pages-dropdown').classList.toggle('active');
+        });
+
+        document.getElementById('newPage').addEventListener('click', () => this.createNewPage());
+        document.getElementById('savePage').addEventListener('click', () => this.savePage());
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.pages-dropdown') && 
+                !e.target.closest('#pagesToggle')) {
+                document.querySelector('.pages-dropdown').classList.remove('active');
+            }
+        });
+
+        colorWrapper.addEventListener('mouseenter', () => {
+            colorButtonPreview.style.transform = 'scale(1.1)';
+            eyedropperIcon.style.opacity = '1';
+        });
+
+        colorWrapper.addEventListener('mouseleave', () => {
+            colorButtonPreview.style.transform = 'scale(1)';
+            eyedropperIcon.style.opacity = '0.7';
+        });
+    }
+
+    loadFromLocalStorage() {
+        const savedData = localStorage.getItem('notebookPages');
+        if (savedData) {
+            this.pages = this.deserializePages(JSON.parse(savedData));
+            if (!this.pages['Home']) {
+                this.pages['Home'] = {
+                    filledCells: new Set(),
+                    lines: []
+                };
+            }
+            this.currentPageData = this.pages[this.currentPageName] || {
+                filledCells: new Set(),
+                lines: []
+            };
+        } else {
+            this.pages[this.currentPageName] = this.currentPageData;
+        }
+        this.loadPage(this.currentPageName);
+        this.updatePagesList();
+    }
+
+    saveToLocalStorage() {
+        const serializedData = this.serializePages();
+        localStorage.setItem('notebookPages', JSON.stringify(serializedData));
+    }
+
+    handleMouseMove(e) {
+        if (this.currentTool === 'erase') {
+            if (this.isDrawing) {
+                this.handleErase(e);
+            }
+            return;
+        }
+
+        if (this.currentTool !== 'line') {
+            if (this.isDrawing && this.currentTool === 'fill') {
+                const cell = e.target.closest('.grid-cell');
+                if (cell) this.toggleCell(cell);
+            }
+            return;
+        }
+
+        const point = this.getGridPoint(e);
+        if (this.isDrawing && this.startPoint) {
+            this.updateLinePreview(this.startPoint, point);
+        }
+    }
+
+    handleMouseDown(e) {
+        this.isDrawing = true;
+        if (this.currentTool === 'line') {
+            const point = this.getGridPoint(e);
+            this.startPoint = point;
+            this.updateLinePreview(point, point);
+        } else if (this.currentTool === 'erase') {
+            this.handleErase(e);
+        } else {
+            const cell = e.target.closest('.grid-cell');
+            if (cell) this.toggleCell(cell);
+        }
+    }
+
+    handleMouseUp() {
+        if (this.currentTool === 'line' && this.previewLine) {
+            this.commitLine();
+        }
+        this.isDrawing = false;
+        this.startPoint = null;
+    }
+
+    handleMouseLeave() {
+        if (this.currentTool === 'line') {
+            this.isDrawing = false;
+            this.startPoint = null;
+            this.removePreviewLine();
+        }
+    }
+
+    handleErase(e) {
+        const rect = document.getElementById('gridContainer').getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const cell = e.target.closest('.grid-cell');
+        if (cell && cell.classList.contains('filled')) {
+            this.toggleCell(cell, true);
+        }
+
+        const lines = document.querySelectorAll('.line-container');
+        lines.forEach(lineContainer => {
+            const line = lineContainer.querySelector('.line');
+            const lineRect = line.getBoundingClientRect();
+            
+            const eraserRadius = 10;
+            const lineX = lineRect.left - rect.left;
+            const lineY = lineRect.top - rect.top;
+            
+            if (Math.abs(x - lineX) < eraserRadius && Math.abs(y - lineY) < eraserRadius) {
+                const lineIndex = Array.from(this.currentPageData.lines).findIndex(l => 
+                    l.lineStyle === line.style.cssText && l.lineClass === line.className);
+                
+                if (lineIndex !== -1) {
+                    this.currentPageData.lines.splice(lineIndex, 1);
+                    lineContainer.remove();
+                    
+                    this.addToUndoStack({
+                        type: 'eraseLine',
+                        lineData: {
+                            className: lineContainer.className,
+                            lineStyle: line.style.cssText,
+                            lineClass: line.className
+                        }
+                    });
+                    this.saveToLocalStorage();
+                }
+            }
+        });
+    }
+
+    updateLinePreview(start, end) {
+        if (!this.previewLine) {
+            this.previewLine = document.createElement('div');
+            this.previewLine.className = 'line-container preview';
+            document.getElementById('gridContainer').appendChild(this.previewLine);
+        } else {
+            this.previewLine.innerHTML = '';
+        }
+
+        const deltaX = end.x - start.x;
+        const deltaY = end.y - start.y;
+        
+        const line = document.createElement('div');
+        line.className = 'line preview-line';
+        line.style.backgroundColor = this.currentColor;
+        line.style.boxShadow = `0 0 8px ${this.currentColor}66`;
+
+        const absX = Math.abs(deltaX);
+        const absY = Math.abs(deltaY);
+
+        if (this.isDiagonal && absX > 0 && absY > 0) {
+            const signX = Math.sign(deltaX);
+            const signY = Math.sign(deltaY);
+            
+            const length = Math.sqrt(2) * this.gridSize;
+            const angle = signY * signX > 0 ? 45 : -45;
+            const finalAngle = signX < 0 ? angle + 180 : angle;
+            
+            line.style.width = `${length}px`;
+            line.style.left = `${start.x}px`;
+            line.style.top = `${start.y}px`;
+            line.style.transform = `rotate(${finalAngle}deg)`;
+            line.classList.add('diagonal');
+        } else {
+            const isHorizontal = absX > absY;
+            
+            if (isHorizontal) {
+                const width = Math.min(absX, this.gridSize);
+                line.className = 'line preview-line horizontal';
+                line.style.width = `${width}px`;
+                line.style.left = `${Math.min(start.x, start.x + (deltaX > 0 ? this.gridSize : -this.gridSize))}px`;
+                line.style.top = `${start.y - 1}px`;
+                if (deltaX < 0) {
+                    line.style.transform = 'rotate(180deg)';
+                }
+            } else {
+                const height = Math.min(absY, this.gridSize);
+                line.className = 'line preview-line vertical';
+                line.style.height = `${height}px`;
+                line.style.left = `${start.x - 1}px`;
+                line.style.top = `${Math.min(start.y, start.y + (deltaY > 0 ? this.gridSize : -this.gridSize))}px`;
+                if (deltaY < 0) {
+                    line.style.transform = 'rotate(180deg)';
+                }
+            }
+        }
+
+        this.previewLine.appendChild(line);
+    }
+
+    commitLine() {
+        if (!this.previewLine || this.currentTool !== 'line') return;
+        
+        const previewLine = this.previewLine.querySelector('.line');
+        if (!previewLine) return;
+
+        const lineContainer = document.createElement('div');
+        lineContainer.className = 'line-container';
+        
+        const permanentLine = previewLine.cloneNode(true);
+        permanentLine.classList.remove('preview-line');
+        permanentLine.style.backgroundColor = this.currentColor;
+        permanentLine.style.boxShadow = `0 0 8px ${this.currentColor}66`;
+        lineContainer.appendChild(permanentLine);
+        
+        document.getElementById('gridContainer').appendChild(lineContainer);
+
+        const lineAction = {
+            type: 'line',
+            container: {
+                className: lineContainer.className,
+                lineStyle: permanentLine.style.cssText,
+                lineClass: permanentLine.className
+            }
+        };
+
+        this.addToUndoStack(lineAction);
+        this.currentPageData.lines.push(lineAction.container);
+        this.saveToLocalStorage();
+        
+        const rect = document.getElementById('gridContainer').getBoundingClientRect();
+        const lineRect = permanentLine.getBoundingClientRect();
+        const endX = lineRect.right - rect.left;
+        const endY = lineRect.bottom - rect.top;
+        
+        this.startPoint = this.getGridPoint({
+            clientX: endX + rect.left,
+            clientY: endY + rect.top
+        });
+        
+        this.removePreviewLine();
+    }
+
+    removePreviewLine() {
+        if (this.previewLine && this.previewLine.parentNode) {
+            this.previewLine.parentNode.removeChild(this.previewLine);
+        }
+        this.previewLine = null;
+    }
+
+    getGridPoint(e) {
+        const rect = document.getElementById('gridContainer').getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        return {
+            x: Math.round(x / this.gridSize) * this.gridSize,
+            y: Math.round(y / this.gridSize) * this.gridSize
+        };
+    }
+
+    toggleCell(cell, isErasing = false) {
+    const index = cell.dataset.index;
+    const wasFilledBefore = cell.classList.contains('filled');
+    const previousColor = cell.style.backgroundColor || '';
+
+    const cellAction = {
+        type: 'cell',
+        cellIndex: index,
+        wasFilledBefore: wasFilledBefore,
+        previousColor: previousColor,
+        color: this.currentColor
+    };
+    this.addToUndoStack(cellAction);
+
+    if (!isErasing) {
+        cell.classList.add('filled');
+        cell.style.backgroundColor = this.currentColor;
+        cell.style.boxShadow = `0 0 12px ${this.currentColor}66`;
+        this.currentPageData.filledCells.set(index, {
+            color: this.currentColor
+        });
+    } else {
+        cell.classList.remove('filled');
+        cell.style.backgroundColor = '';
+        cell.style.boxShadow = '';
+        this.currentPageData.filledCells.delete(index);
+    }
+    this.saveToLocalStorage();
+}
+    async createNewPage() {
+    const pageName = await this.modal.prompt({
+        title: 'Create New Page',
+        message: 'Enter a name for your new page:',
+        placeholder: 'Page name',
+        validateInput: (input) => {
+            if (!input) {
+                this.modal.alert({
+                    title: 'Error',
+                    message: 'Please enter a page name.'
+                });
+                return false;
+            }
+            if (this.pages[input]) {
+                this.modal.alert({
+                    title: 'Error',
+                    message: 'A page with this name already exists.'
+                });
+                return false;
+            }
+            return true;
+        }
+    });
+
+    if (!pageName) return;
+
+    this.clearPage();
+    this.currentPageName = pageName;
+    this.currentPageData = {
+        filledCells: new Map(),
+        lines: []
+    };
+    this.pages[pageName] = this.currentPageData;
+    this.updatePagesList();
+    this.saveToLocalStorage();
+}
+    async removePage(pageName) {
+       if (pageName === 'Home') {
+           await this.modal.alert({
+               title: 'Cannot Delete Home',
+               message: 'The Home page cannot be deleted.'
+           });
+           return;
+       }
+       
+       const confirmed = await this.modal.confirm({
+           title: 'Delete Page',
+           message: `Are you sure you want to delete "${pageName}"?`,
+           confirmText: 'Delete',
+           cancelText: 'Cancel'
+       });
+
+       if (confirmed) {
+           delete this.pages[pageName];
+           if (this.currentPageName === pageName) {
+               this.currentPageName = 'Home';
+               this.loadPage('Home');
+           }
+           this.updatePagesList();
+           this.saveToLocalStorage();
+       }
+   }
+
+    clearPage() {
+       document.querySelectorAll('.grid-cell.filled').forEach(cell => {
+           cell.classList.remove('filled');
+           cell.style.backgroundColor = '';
+           cell.style.boxShadow = '';
+       });
+       document.querySelectorAll('.line-container').forEach(line => 
+           line.remove());
+       this.undoStack = [];
+       this.redoStack = [];
+   }
+
+    updatePagesList() {
+        const pagesList = document.getElementById('pagesList');
+        pagesList.innerHTML = '';
+        
+        Object.keys(this.pages).forEach(pageName => {
+            const pageItem = document.createElement('div');
+            pageItem.className = 'page-item';
+            
+            const pageContent = document.createElement('div');
+            pageContent.style.display = 'flex';
+            pageContent.style.justifyContent = 'space-between';
+            pageContent.style.alignItems = 'center';
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = pageName;
+            nameSpan.style.flex = '1';
+            nameSpan.addEventListener('click', () => this.loadPage(pageName));
+            pageContent.appendChild(nameSpan);
+            
+            if (pageName !== 'Home') {
+                const deleteBtn = document.createElement('button');
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                deleteBtn.className = 'delete-page-btn';
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.removePage(pageName);
+                });
+                pageContent.appendChild(deleteBtn);
+            }
+            
+            pageItem.appendChild(pageContent);
+            pagesList.appendChild(pageItem);
+        });
+    }
+
+    loadPage(pageName) {
+        if (!pageName || !this.pages[pageName]) return;
+        
+        this.clearPage();
+        this.currentPageName = pageName;
+        this.currentPageData = this.pages[pageName];
+
+        this.currentPageData.filledCells.forEach((data, index) => {
+            const cell = document.querySelector(`.grid-cell[data-index="${index}"]`);
+            if (cell) {
+                cell.classList.add('filled');
+                const cellColor = data.color || this.currentColor;
+                cell.style.backgroundColor = cellColor;
+                cell.style.boxShadow = `0 0 12px ${cellColor}66`;
+            }
+        });
+
+        this.currentPageData.lines.forEach(line => {
+            const lineContainer = document.createElement('div');
+            lineContainer.className = line.className;
+            const lineElement = document.createElement('div');
+            lineElement.className = line.lineClass;
+            lineElement.style.cssText = line.lineStyle;
+            lineContainer.appendChild(lineElement);
+            document.getElementById('gridContainer').appendChild(lineContainer);
+        });
+
+        document.querySelector('.pages-dropdown').classList.remove('active');
+    }
+    savePage() {
+        this.saveToLocalStorage();
+    }
+
+    serializePages() {
+        const serialized = {};
+        Object.entries(this.pages).forEach(([pageName, pageData]) => {
+            serialized[pageName] = {
+                filledCells: Array.from(pageData.filledCells.entries()),
+                lines: pageData.lines
+            };
+        });
+        return serialized;
+    }
+
+    deserializePages(serialized) {
+        const deserialized = {};
+        Object.entries(serialized).forEach(([pageName, pageData]) => {
+            deserialized[pageName] = {
+                filledCells: new Map(pageData.filledCells),
+                lines: pageData.lines
+            };
+        });
+        return deserialized;
+    }
+
+    addToUndoStack(action) {
+        const actionCopy = JSON.parse(JSON.stringify(action));
+        this.undoStack.push(actionCopy);
+        if (this.undoStack.length > this.maxStackSize) {
+            this.undoStack.shift();
+        }
+        this.redoStack = [];
+        this.saveToLocalStorage();
+    }
+
+    undo() {
+        if (this.undoStack.length === 0) return;
+
+        const action = this.undoStack.pop();
+        const actionCopy = JSON.parse(JSON.stringify(action));
+        this.redoStack.push(actionCopy);
+
+        if (action.type === 'line') {
+            const lines = document.querySelectorAll('.line-container');
+            const lastLine = lines[lines.length - 1];
+            if (lastLine) {
+                const line = lastLine.querySelector('.line');
+                if (line && line.style.cssText === action.container.lineStyle) {
+                    lastLine.remove();
+                    this.currentPageData.lines.pop();
+                }
+            }
+        } else if (action.type === 'eraseLine') {
+            const lineContainer = document.createElement('div');
+            lineContainer.className = action.lineData.className;
+            const lineElement = document.createElement('div');
+            lineElement.className = action.lineData.lineClass;
+            lineElement.style.cssText = action.lineData.lineStyle;
+            lineContainer.appendChild(lineElement);
+            document.getElementById('gridContainer').appendChild(lineContainer);
+            this.currentPageData.lines.push({...action.lineData});
+        } else if (action.type === 'cell') {
+            const cell = document.querySelector(`.grid-cell[data-index="${action.cellIndex}"]`);
+            if (cell) {
+                if (action.wasFilledBefore) {
+                    cell.classList.add('filled');
+                    cell.style.backgroundColor = action.previousColor;
+                    cell.style.boxShadow = `0 0 12px ${action.previousColor}66`;
+                    this.currentPageData.filledCells.set(action.cellIndex, {
+                        color: action.previousColor
+                    });
+                } else {
+                    cell.classList.remove('filled');
+                    cell.style.backgroundColor = '';
+                    cell.style.boxShadow = '';
+                    this.currentPageData.filledCells.delete(action.cellIndex);
+                }
+            }
+        }
+        this.saveToLocalStorage();
+    }
+
+    redo() {
+       if (this.redoStack.length === 0) return;
+
+       const action = this.redoStack.pop();
+       const actionCopy = JSON.parse(JSON.stringify(action));
+       this.undoStack.push(actionCopy);
+
+       if (action.type === 'line') {
+           const lineContainer = document.createElement('div');
+           lineContainer.className = action.container.className;
+           const lineElement = document.createElement('div');
+           lineElement.className = action.container.lineClass;
+           lineElement.style.cssText = action.container.lineStyle;
+           lineContainer.appendChild(lineElement);
+           document.getElementById('gridContainer').appendChild(lineContainer);
+           this.currentPageData.lines.push({...action.container});
+       } else if (action.type === 'eraseLine') {
+           const lines = document.querySelectorAll('.line-container');
+           lines.forEach(lineContainer => {
+               const line = lineContainer.querySelector('.line');
+               if (line && line.style.cssText === action.lineData.lineStyle) {
+                   lineContainer.remove();
+                   const lineIndex = this.currentPageData.lines.findIndex(l => 
+                       l.lineStyle === action.lineData.lineStyle);
+                   if (lineIndex !== -1) {
+                       this.currentPageData.lines.splice(lineIndex, 1);
+                   }
+               }
+           });
+       } else if (action.type === 'cell') {
+           const cell = document.querySelector(`.grid-cell[data-index="${action.cellIndex}"]`);
+           if (cell) {
+            if (!action.wasFilledBefore) {
+                cell.classList.add('filled');
+                cell.style.backgroundColor = action.color;
+                cell.style.boxShadow = `0 0 8px ${action.color}66`;
+                this.currentPageData.filledCells.set(action.cellIndex, {
+                    color: action.color
+                });
+            } else {
+                cell.classList.remove('filled');
+                cell.style.backgroundColor = '';
+                cell.style.boxShadow = '';
+                this.currentPageData.filledCells.delete(action.cellIndex);
+            }
+           }
+       }
+       this.saveToLocalStorage();
+   }
+}
+
+class Modal {
+   constructor() {
+       this.modal = document.getElementById('modal');
+       this.setupListeners();
+   }
+
+   setupListeners() {
+       this.modal.querySelector('.modal-close').addEventListener('click', () => {
+           this.close();
+       });
+
+       window.addEventListener('keydown', (e) => {
+           if (e.key === 'Escape' && this.modal.classList.contains('active')) {
+               this.close();
+           }
+       });
+
+       this.modal.addEventListener('click', (e) => {
+           if (e.target === this.modal) {
+               this.close();
+           }
+       });
+   }
+
+   async prompt(options) {
+       const {
+           title = '',
+           message = '',
+           placeholder = '',
+           defaultValue = '',
+           confirmText = 'OK',
+           cancelText = 'Cancel',
+           validateInput = (input) => true,
+           inputType = 'text'
+       } = options;
+
+       return new Promise((resolve) => {
+           const header = this.modal.querySelector('.modal-header h2');
+           const body = this.modal.querySelector('.modal-body');
+           const footer = this.modal.querySelector('.modal-footer');
+
+           header.textContent = title;
+           
+           body.innerHTML = `
+               ${message ? `<p style="margin-bottom: 15px;">${message}</p>` : ''}
+               <input type="${inputType}" class="modal-input" placeholder="${placeholder}" value="${defaultValue}">
+           `;
+
+           const input = body.querySelector('.modal-input');
+           footer.innerHTML = `
+               <button class="modal-button secondary" data-action="cancel">${cancelText}</button>
+               <button class="modal-button primary" data-action="confirm">${confirmText}</button>
+           `;
+
+           const handleConfirm = () => {
+               const value = input.value.trim();
+               if (!validateInput(value)) return;
+               this.close();
+               resolve(value);
+           };
+
+           const handleCancel = () => {
+               this.close();
+               resolve(null);
+           };
+
+           footer.querySelector('[data-action="confirm"]').addEventListener('click', handleConfirm);
+           footer.querySelector('[data-action="cancel"]').addEventListener('click', handleCancel);
+           
+           input.addEventListener('keypress', (e) => {
+               if (e.key === 'Enter') handleConfirm();
+           });
+
+           this.modal.classList.add('active');
+           input.focus();
+       });
+   }
+
+   async confirm(options) {
+       const {
+           title = '',
+           message = '',
+           confirmText = 'OK',
+           cancelText = 'Cancel'
+       } = options;
+
+       return new Promise((resolve) => {
+           const header = this.modal.querySelector('.modal-header h2');
+           const body = this.modal.querySelector('.modal-body');
+           const footer = this.modal.querySelector('.modal-footer');
+
+           header.textContent = title;
+           body.innerHTML = `<p>${message}</p>`;
+           footer.innerHTML = `
+               <button class="modal-button secondary" data-action="cancel">${cancelText}</button>
+               <button class="modal-button primary" data-action="confirm">${confirmText}</button>
+           `;
+
+           footer.querySelector('[data-action="confirm"]').addEventListener('click', () => {
+               this.close();
+               resolve(true);
+           });
+
+           footer.querySelector('[data-action="cancel"]').addEventListener('click', () => {
+               this.close();
+               resolve(false);
+           });
+
+           this.modal.classList.add('active');
+       });
+   }
+
+   async alert(options) {
+       const {
+           title = '',
+           message = '',
+           confirmText = 'OK'
+       } = options;
+
+       return new Promise((resolve) => {
+           const header = this.modal.querySelector('.modal-header h2');
+           const body = this.modal.querySelector('.modal-body');
+           const footer = this.modal.querySelector('.modal-footer');
+
+           header.textContent = title;
+           body.innerHTML = `<p>${message}</p>`;
+           footer.innerHTML = `
+               <button class="modal-button primary" data-action="confirm">${confirmText}</button>
+           `;
+
+           footer.querySelector('[data-action="confirm"]').addEventListener('click', () => {
+               this.close();
+               resolve(true);
+           });
+
+           this.modal.classList.add('active');
+       });
+   }
+
+   close() {
+       this.modal.classList.remove('active');
+   }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+   new NotebookApp();
+});
+</script>
+
+</body>
+</html>
