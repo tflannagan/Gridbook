@@ -716,7 +716,7 @@ class NotebookApp {
     }
 
     setupEventListeners() {
-        // Existing event listeners
+       
         document.querySelector('.open-button').addEventListener('click', () => {
             document.querySelector('.cover').classList.add('opened');
         });
@@ -727,7 +727,6 @@ class NotebookApp {
         container.addEventListener('mouseup', () => this.handleMouseUp());
         container.addEventListener('mouseleave', () => this.handleMouseLeave());
 
-        // Setup toolbar dragging
         const toolbar = document.querySelector('.toolbar');
         const dragHandle = toolbar.querySelector('.drag-handle');
 
@@ -735,12 +734,12 @@ class NotebookApp {
         document.addEventListener('mousemove', (e) => this.drag(e));
         document.addEventListener('mouseup', () => this.stopDragging());
         
-        // Touch events for mobile support
+        
         dragHandle.addEventListener('touchstart', (e) => this.startDragging(e));
         document.addEventListener('touchmove', (e) => this.drag(e));
         document.addEventListener('touchend', () => this.stopDragging());
 
-        // Setup color picker
+
         const colorWrapper = toolbar.querySelector('.color-picker-wrapper');
         const colorButtonPreview = document.createElement('div');
         colorButtonPreview.className = 'color-picker-button';
@@ -788,7 +787,7 @@ class NotebookApp {
             eyedropperIcon.style.opacity = '0.7';
         });
 
-        // Tool selection
+     
         document.querySelectorAll('.tool-button[data-tool]').forEach(button => {
             button.addEventListener('click', (e) => {
                 const toolButton = e.target.closest('.tool-button');
@@ -802,7 +801,7 @@ class NotebookApp {
             });
         });
 
-        // Keyboard shortcuts
+   
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Shift') {
                 this.isDiagonal = true;
@@ -823,7 +822,7 @@ class NotebookApp {
             if (e.key === 'Shift') this.isDiagonal = false;
         });
 
-        // Page management
+     
         document.getElementById('pagesToggle').addEventListener('click', () => {
             document.querySelector('.pages-dropdown').classList.toggle('active');
         });
@@ -843,11 +842,11 @@ class NotebookApp {
         const toolbar = document.querySelector('.toolbar');
         if (!e.target.closest('.drag-handle')) return;
     
-        // Get the current position before removing the transform
+      
         const rect = toolbar.getBoundingClientRect();
         toolbar.classList.add('dragging');
         
-        // Set initial position to maintain the toolbar's current position
+
         this.xOffset = rect.left;
         this.yOffset = rect.top;
         toolbar.style.left = `${this.xOffset}px`;
