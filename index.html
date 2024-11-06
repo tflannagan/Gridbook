@@ -286,7 +286,10 @@
         }
 
         .toolbar {
+            cursor: move;
             position: fixed;
+            max-height: 70px;
+            height: 70px;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
@@ -299,6 +302,30 @@
             gap: 8px;
             z-index: 100;
             box-shadow: 0 4px 24px var(--shadow-color);
+            transition: none;
+        }
+        
+        .drag-handle {
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            color: var(--text-color);
+            opacity: 0.5;
+            transition: opacity 0.2s ease;
+            cursor: grab;
+        }
+        
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        
+        .drag-handle:hover {
+            opacity: 1;
+        }
+        
+        .toolbar.dragging {
+            transition: none !important;
+            transform: none;
         }
 
         .tool-button {
@@ -606,6 +633,12 @@
     </div>
 
     <div class="toolbar">
+        <div class="drag-handle">
+            <i class="fas fa-ellipsis-v"></i>
+        </div>
+        <div class="tool-button color-picker-wrapper">
+            <!-- Color picker content -->
+        </div>
         <button title="toolbar" class="tool-button active" data-tool="fill">
             <i class="fas fa-fill-drip"></i>
         </button>
@@ -650,6 +683,14 @@ class NotebookApp {
         this.maxStackSize = 100;
         this.modal = new Modal();
 
+        this.isDragging = false;
+        this.currentX = 0;
+        this.currentY = 0;
+        this.initialX = 0;
+        this.initialY = 0;
+        this.xOffset = 0;
+        this.yOffset = 0;
+
         this.initializeGrid();
         this.setupEventListeners();
         this.loadFromLocalStorage();
@@ -675,6 +716,7 @@ class NotebookApp {
     }
 
     setupEventListeners() {
+        // Existing event listeners
         document.querySelector('.open-button').addEventListener('click', () => {
             document.querySelector('.cover').classList.add('opened');
         });
@@ -685,10 +727,21 @@ class NotebookApp {
         container.addEventListener('mouseup', () => this.handleMouseUp());
         container.addEventListener('mouseleave', () => this.handleMouseLeave());
 
+        // Setup toolbar dragging
         const toolbar = document.querySelector('.toolbar');
-        const colorWrapper = document.createElement('div');
-        colorWrapper.className = 'tool-button color-picker-wrapper';
+        const dragHandle = toolbar.querySelector('.drag-handle');
 
+        dragHandle.addEventListener('mousedown', (e) => this.startDragging(e));
+        document.addEventListener('mousemove', (e) => this.drag(e));
+        document.addEventListener('mouseup', () => this.stopDragging());
+        
+        // Touch events for mobile support
+        dragHandle.addEventListener('touchstart', (e) => this.startDragging(e));
+        document.addEventListener('touchmove', (e) => this.drag(e));
+        document.addEventListener('touchend', () => this.stopDragging());
+
+        // Setup color picker
+        const colorWrapper = toolbar.querySelector('.color-picker-wrapper');
         const colorButtonPreview = document.createElement('div');
         colorButtonPreview.className = 'color-picker-button';
         colorButtonPreview.style.backgroundColor = this.currentColor;
@@ -712,7 +765,6 @@ class NotebookApp {
 
         colorButtonPreview.appendChild(colorPicker);
         colorWrapper.appendChild(colorButtonPreview);
-        toolbar.insertBefore(colorWrapper, toolbar.firstChild);
 
         colorPicker.addEventListener('input', (e) => {
             const newColor = e.target.value;
@@ -726,6 +778,31 @@ class NotebookApp {
             colorButtonPreview.style.backgroundColor = newColor;
         });
 
+        colorWrapper.addEventListener('mouseenter', () => {
+            colorButtonPreview.style.transform = 'scale(1.1)';
+            eyedropperIcon.style.opacity = '1';
+        });
+
+        colorWrapper.addEventListener('mouseleave', () => {
+            colorButtonPreview.style.transform = 'scale(1)';
+            eyedropperIcon.style.opacity = '0.7';
+        });
+
+        // Tool selection
+        document.querySelectorAll('.tool-button[data-tool]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const toolButton = e.target.closest('.tool-button');
+                if (!toolButton) return;
+
+                document.querySelectorAll('.tool-button[data-tool]').forEach(b => 
+                    b.classList.remove('active'));
+                toolButton.classList.add('active');
+                this.currentTool = toolButton.dataset.tool;
+                this.removePreviewLine();
+            });
+        });
+
+        // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Shift') {
                 this.isDiagonal = true;
@@ -746,19 +823,7 @@ class NotebookApp {
             if (e.key === 'Shift') this.isDiagonal = false;
         });
 
-        document.querySelectorAll('.tool-button[data-tool]').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const toolButton = e.target.closest('.tool-button');
-                if (!toolButton) return;
-
-                document.querySelectorAll('.tool-button[data-tool]').forEach(b => 
-                    b.classList.remove('active'));
-                toolButton.classList.add('active');
-                this.currentTool = toolButton.dataset.tool;
-                this.removePreviewLine();
-            });
-        });
-
+        // Page management
         document.getElementById('pagesToggle').addEventListener('click', () => {
             document.querySelector('.pages-dropdown').classList.toggle('active');
         });
@@ -772,17 +837,72 @@ class NotebookApp {
                 document.querySelector('.pages-dropdown').classList.remove('active');
             }
         });
-
-        colorWrapper.addEventListener('mouseenter', () => {
-            colorButtonPreview.style.transform = 'scale(1.1)';
-            eyedropperIcon.style.opacity = '1';
-        });
-
-        colorWrapper.addEventListener('mouseleave', () => {
-            colorButtonPreview.style.transform = 'scale(1)';
-            eyedropperIcon.style.opacity = '0.7';
-        });
     }
+
+    startDragging(e) {
+        const toolbar = document.querySelector('.toolbar');
+        if (!e.target.closest('.drag-handle')) return;
+    
+        // Get the current position before removing the transform
+        const rect = toolbar.getBoundingClientRect();
+        toolbar.classList.add('dragging');
+        
+        // Set initial position to maintain the toolbar's current position
+        this.xOffset = rect.left;
+        this.yOffset = rect.top;
+        toolbar.style.left = `${this.xOffset}px`;
+        toolbar.style.top = `${this.yOffset}px`;
+    
+        if (e.type === 'mousedown') {
+            this.initialX = e.clientX - this.xOffset;
+            this.initialY = e.clientY - this.yOffset;
+        } else {
+            this.initialX = e.touches[0].clientX - this.xOffset;
+            this.initialY = e.touches[0].clientY - this.yOffset;
+        }
+    
+        this.isDragging = true;
+    }
+    drag(e) {
+        if (!this.isDragging) return;
+        
+        e.preventDefault();
+        
+        if (e.type === 'mousemove') {
+            this.currentX = e.clientX - this.initialX;
+            this.currentY = e.clientY - this.initialY;
+        } else {
+            this.currentX = e.touches[0].clientX - this.initialX;
+            this.currentY = e.touches[0].clientY - this.initialY;
+        }
+
+        this.xOffset = this.currentX;
+        this.yOffset = this.currentY;
+
+        const toolbar = document.querySelector('.toolbar');
+        const toolbarRect = toolbar.getBoundingClientRect();
+        const maxX = window.innerWidth - toolbarRect.width;
+        const maxY = window.innerHeight - toolbarRect.height;
+        
+        this.xOffset = Math.min(Math.max(this.xOffset, 0), maxX);
+        this.yOffset = Math.min(Math.max(this.yOffset, 0), maxY);
+
+        toolbar.style.transform = 'none';
+        toolbar.style.left = `${this.xOffset}px`;
+        toolbar.style.top = `${this.yOffset}px`;
+    }
+
+    stopDragging() {
+        this.isDragging = false;
+        const toolbar = document.querySelector('.toolbar');
+        toolbar.classList.remove('dragging');
+    }
+    setTranslate(xPos, yPos) {
+        this.toolbar.style.transform = 'none';
+        this.toolbar.style.left = `${xPos}px`;
+        this.toolbar.style.top = `${yPos}px`;
+    }
+
 
     loadFromLocalStorage() {
         const savedData = localStorage.getItem('notebookPages');
@@ -1472,6 +1592,7 @@ class Modal {
 
 document.addEventListener('DOMContentLoaded', () => {
    new NotebookApp();
+
 });
 </script>
 
